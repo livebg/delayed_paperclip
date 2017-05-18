@@ -1,10 +1,11 @@
-require "active_job"
+require 'sidekiq'
 
 module DelayedPaperclip
-  class ProcessJob < ActiveJob::Base
+  class ProcessJob
+  	include Sidekiq::Worker
+
     def self.enqueue_delayed_paperclip(instance_klass, instance_id, attachment_name)
-      queue_name = instance_klass.constantize.paperclip_definitions[attachment_name][:delayed][:queue]
-      set(:queue => queue_name).perform_later(instance_klass, instance_id, attachment_name.to_s)
+      ::ProcessJob.perform_async(instance_klass, instance_id, attachment_name.to_s)
     end
 
     def perform(instance_klass, instance_id, attachment_name)
